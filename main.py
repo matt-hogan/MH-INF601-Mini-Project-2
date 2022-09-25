@@ -75,3 +75,45 @@ def get_product_dataframe(df):
 
     product_df = product_df.apply(add_missing_categories, axis=1)
     return product_df
+
+def create_chart(df):
+    """ Creates a scatter plot using the product dataframe with quanity sold on the x-axis and gross revenue on the y-axis. Each point is colored by category and labeled with the product name. """
+    categories_unique = df["category"].unique()
+    colors = [ "#FF0000", "#000000", "#0000FF", "#00FF00" ]
+    plt.subplots(figsize=(16,9))
+    # Plot each category one at a time so legend shows the color associated with each category
+    for category, color in zip(categories_unique, colors):
+        x = df[df.category==category].quantity_sold
+        y = df[df.category==category].gross_revenue
+        plt.scatter(x, y, label=category, c=color, s=12)
+
+    plt.title("Top 10 Best Selling Vending Machine Items")
+    plt.xlabel("Quantity Sold")
+    plt.ylabel("Gross Revenue ($)")
+    plt.legend(loc="upper left")
+    plt.grid(True)
+    plt.xlim(100, 600)
+    plt.ylim(200, 1200)
+
+    # Add text labels with the product name for each point without overlapping labels
+    # This imported function is not efficient and labeling without overlapping could be optimized
+    adjust_text(
+        [
+            plt.text(quantity, gross, product)
+            for quantity, gross, product in zip(df.quantity_sold, df.gross_revenue, df.product_name)
+        ],
+        only_move={'points':'y', 'texts':'y'},
+        arrowprops=dict(arrowstyle="->", color='black', lw=0.5)
+    )
+    
+    # Save the plot to a png file
+    charts_dir = "charts"
+    make_dir(charts_dir)
+    plt.savefig(os.path.join(charts_dir, f"best_selling_products.png"))
+    plt.close()
+
+
+if __name__ == "__main__":
+    df = get_cleaned_kaggle_df()
+    product_df = get_product_dataframe(df)
+    create_chart(product_df)
