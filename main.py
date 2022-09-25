@@ -44,3 +44,34 @@ def get_cleaned_kaggle_df():
     # Remove rows of data missing a product name
     df = df.dropna(subset=["Product"])
     return df
+
+def get_product_dataframe(df):
+    """
+    Takes in a dataframe with vending machine transactions
+    Returns a dataframe of best selling vending machine products along with the quanity of the product sold, the gross revenue the product made, and the product's category
+    """
+    product_data =  [
+        [
+            product,
+            df.loc[df["Product"] == product, "RQty"].sum(),
+            df.loc[df["Product"] == product, "RPrice"].sum(),
+            df[df["Product"] == product].iloc[0].Category
+        ]
+        for product in df.Product.unique()
+    ]
+    product_df = pd.DataFrame(product_data, columns=["product_name", "quantity_sold", "gross_revenue", "category"])
+
+    # Remove prodcuts who do not meet best selling thresholds
+    product_df.drop(product_df.index[product_df['quantity_sold'] < 100], inplace=True)
+    product_df.drop(product_df.index[product_df['gross_revenue'] < 200], inplace=True)
+
+    def add_missing_categories(df):
+        """
+        Adds a category to products missing one.
+        For this data some Canada Dry drinks are missing the carbonated category, Starbucks drinks are missing non carbonated, and the rest of the missing categories are for food.
+        """
+        df.loc[df.isnull()] = "Carbonated" if "Canada Dry" in df["product_name"] else "Non Carbonated" if "Starbucks" in df["product_name"] else "Food"
+        return df
+
+    product_df = product_df.apply(add_missing_categories, axis=1)
+    return product_df
